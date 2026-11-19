@@ -32,8 +32,10 @@ struct TVEpisodeRail: View {
     var cardHeightRatio: CGFloat = 9 / 16
     var cardSpacing: CGFloat = 54
     var anchorsFocusedCard = false
-    /// The plain rail takes focus on its entry card when it appears, so a page
-    /// whose episodes arrive after it opens still opens on its next episode.
+    /// While set, the plain rail claims focus on its entry card whenever the
+    /// flag turns on or the entry card changes, retrying until a card holds
+    /// focus, so a page whose episodes arrive after it opens still opens on
+    /// its next episode.
     var claimsFocusOnAppear = false
     /// Explicit season-chip jumps scroll the existing carousel without
     /// taking focus from the chip. Loaded edges extend the same episode row.

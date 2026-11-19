@@ -782,7 +782,8 @@ private struct WatchPartyEpisodePicker: View {
     @State private var focusedEpisodeId: String?
     @FocusState private var focusedSeasonNumber: Int?
     /// The page opens on the resume episode, as the series page opens on
-    /// Play, until focus reaches the rail or the viewer picks a season.
+    /// Play. One-shot: cleared once the viewer reaches the season row or
+    /// chooses an episode, never by the rail's own focus claim.
     @State private var opensOnResumeEpisode = true
     #endif
 
@@ -876,6 +877,11 @@ private struct WatchPartyEpisodePicker: View {
                     .padding(.horizontal, -8)
                     .focusSection()
                     .defaultFocus($focusedSeasonNumber, seasonNumber, priority: .userInitiated)
+                    // Reaching the season row ends the opening claim for good,
+                    // so moving between pills cannot re-arm it.
+                    .onChange(of: focusedSeasonNumber) { _, number in
+                        if number != nil { opensOnResumeEpisode = false }
+                    }
                     .padding(.bottom, 24)
                 }
                 Group {
@@ -901,17 +907,17 @@ private struct WatchPartyEpisodePicker: View {
                             episodes: episodes,
                             onSelect: { id in
                                 guard let episode = episodes.first(where: { $0.contentId == id }) else { return }
+                                opensOnResumeEpisode = false
                                 chosen = WatchPartyMediaChoice(series: series, episode: episode)
                             },
-                            onFocusedEpisodeChange: { id in
-                                guard let id else { return }
-                                focusedEpisodeId = id
-                                opensOnResumeEpisode = false
-                            },
+                            // Leaves the claim flag alone: the claim's own write
+                            // lands here, and clearing it would cancel the retries.
+                            onFocusedEpisodeChange: { id in if let id { focusedEpisodeId = id } },
                             currentContentId: resumeEpisode?.contentId,
                             baseCardWidth: 400,
                             cardSpacing: 36,
-                            // Not once the viewer moves up to the seasons.
+                            // The season term cancels pending retries in the same
+                            // update that focus reaches a pill.
                             claimsFocusOnAppear: opensOnResumeEpisode && focusedSeasonNumber == nil
                         )
                         .padding(.horizontal, -WatchPartyMetrics.pageInset)
